@@ -1,9 +1,9 @@
 # Compiler settings
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++17 -O2
+CXXFLAGS =  -Wall -Wextra -std=c++17 -O2
 
 # Source files and objects
-SRCS = main.cpp utils.cpp
+SRCS = main.cpp utils.cpp heuristic.cpp
 OBJS = $(SRCS:.cpp=.o)
 TARGET = genetic_solver
 
@@ -39,6 +39,7 @@ run: all check_instance
 
 .PHONY: all clean debug
 
-# Dependencies
-main.o: main.cpp utils.h
-utils.o: utils.cpp utils.h
+# # Dependencies
+# main.o: main.cpp utils.h
+# utils.o: utils.cpp utils.h
+# heuristic.o: heuristic.cpp heuristic.h utils.h

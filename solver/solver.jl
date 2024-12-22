@@ -30,7 +30,7 @@ function solve_balls_and_bins(filename::String, seed::Int, time_limit::Float64)
     set_attribute(model, "time_limit", time_limit)
 
     @variable(model, 0 <= x[i=1:n] <= u[i], Int)  # bolas por bin
-    @variable(model, z[i=1:n, j=1:maximum(u)], Bin)  # binario para 
+    @variable(model, z[i=1:n, j=1:maximum(u)], Bin)  # binario que indica se o recipiente i tem no minimo j bolas
 
     # objetivo: max o lucro
     @objective(model, Max, sum(j * z[i, j] for i in 1:n, j in 1:u[i]))

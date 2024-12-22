@@ -21,32 +21,31 @@ end
 function solve_balls_and_bins(filename::String, seed::Int, time_limit::Float64)
 
     n, m, bounds = read_input(filename)
+    l = [bounds[i][1] for i in 1:n]
+    u = [bounds[i][2] for i in 1:n]
 
     model = Model(HiGHS.Optimizer)
 
     set_attribute(model, "random_seed", seed)
     set_attribute(model, "time_limit", time_limit)
 
+    @variable(model, 0 <= x[i=1:n] <= u[i], Int)  # bolas por bin
+    @variable(model, z[i=1:n, j=1:maximum(u)], Bin)  # binario que indica se o recipiente i tem no minimo j bolas
 
-    @variable(model, x[1:n], Int)  # número de bolas em cada recipiente
+    # objetivo: max o lucro
+    @objective(model, Max, sum(j * z[i, j] for i in 1:n, j in 1:u[i]))
 
+    # 1. relacionar x[i] com z[i, j]
+    @constraint(model, [i=1:n], x[i] == sum(z[i, j] for j in 1:u[i]))
 
+    # 2. garantir limites inferior e superior de cada recipiente
+    @constraint(model, [i=1:n], l[i] <= x[i] <= u[i])
 
-    # 1. Limites inferior e superior para cada recipiente
-    for i in 1:n
-        l, u = bounds[i]
-        @constraint(model, x[i] >= l)
-        @constraint(model, x[i] <= u)
-    end
+    # 3. garantir consistencia de z[i, j] (z[i, j] = 1 if x[i] >= j)
+    @constraint(model, [i=1:n, j=2:u[i]], z[i, j] <= z[i, j - 1])
 
-    @constraint(model, sum(x) == m)
-
-
-
-    # Função objetivo: maximizar o lucro total
-    # Lucro: (x * (x + 1) / 2) for each bin
-    # Precisa linearizar a função objetivo
-    @objective(model, Max, sum(x)) # template
+    # 4. numero total de bolas deve ser igual a m
+    @constraint(model, sum(x[i] for i in 1:n) == m)
 
     # Resolve o modelo
     start_time = time()
@@ -58,7 +57,7 @@ function solve_balls_and_bins(filename::String, seed::Int, time_limit::Float64)
     # Coleta resultados
     status = termination_status(model)
     objective = if has_values(model)
-        objective_value(model)
+        Int(objective_value(model))
     else
         NaN
     end

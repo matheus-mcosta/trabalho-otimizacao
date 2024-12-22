@@ -39,8 +39,7 @@ function solve_balls_and_bins(filename::String, seed::Int, time_limit::Float64)
         @constraint(model, x[i] <= u)
     end
 
-    # usar <= ou == ????
-    @constraint(model, sum(x) <= m)
+    @constraint(model, sum(x) == m)
 
 
 

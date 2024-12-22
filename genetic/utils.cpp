@@ -1,8 +1,8 @@
-#include <iostream>
 #include <fstream>
-#include <vector>
-#include <string>
+#include <iostream>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 struct BinBounds {
     int min_capacity;
@@ -15,10 +15,10 @@ struct Instance {
     std::vector<BinBounds> bin_bounds;
 };
 
-Instance read_instance(const std::string& filename) {
+Instance read_instance(const std::string &filename) {
     Instance instance;
     std::ifstream file(filename);
-    
+
     if (!file.is_open()) {
         throw std::runtime_error("Could not open file: " + filename);
     }
@@ -32,9 +32,11 @@ Instance read_instance(const std::string& filename) {
     for (int i = 0; i < instance.num_bins; i++) {
         file >> instance.bin_bounds[i].min_capacity;
         file >> instance.bin_bounds[i].max_capacity;
-        
-        if (instance.bin_bounds[i].min_capacity > instance.bin_bounds[i].max_capacity) {
-            throw std::runtime_error("Invalid bounds for bin " + std::to_string(i));
+
+        if (instance.bin_bounds[i].min_capacity >
+            instance.bin_bounds[i].max_capacity) {
+            throw std::runtime_error("Invalid bounds for bin " +
+                                     std::to_string(i));
         }
     }
 
@@ -43,13 +45,12 @@ Instance read_instance(const std::string& filename) {
 }
 
 // Helper function to print instance details
-void print_instance(const Instance& instance) {
+void print_instance(const Instance &instance) {
     std::cout << "Number of bins: " << instance.num_bins << "\n";
     std::cout << "Number of balls: " << instance.num_balls << "\n";
     std::cout << "Bin bounds:\n";
     for (int i = 0; i < instance.num_bins; i++) {
-        std::cout << "Bin " << i << ": [" 
-                 << instance.bin_bounds[i].min_capacity << ", " 
-                 << instance.bin_bounds[i].max_capacity << "]\n";
+        std::cout << "Bin " << i << ": [" << instance.bin_bounds[i].min_capacity
+                  << ", " << instance.bin_bounds[i].max_capacity << "]\n";
     }
 }

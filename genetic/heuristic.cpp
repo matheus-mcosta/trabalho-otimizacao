@@ -1,19 +1,22 @@
 #include "utils.h"
+#include <algorithm>
+#include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <random>
-#include <iomanip>
 #include <vector>
-#include <chrono>
-#include <algorithm>
 
 // Define the Solution structure
 struct Solution {
     std::vector<int> ball_assignments; // ball_assignments[ball] = bin
     int fitness;                       // Objective function value
+    int first_solution;                // First solution value
+    int iteration;                     // Iteration
+    double elapsed_time;               // Elapsed time
 };
 
 // Evaluate the fitness of a solution
-int evaluate_fitness(const Solution& sol, const Instance& instance) {
+int evaluate_fitness(const Solution &sol, const Instance &instance) {
     int fitness = 0;
     std::vector<int> bin_counts(instance.num_bins, 0);
 
@@ -25,7 +28,7 @@ int evaluate_fitness(const Solution& sol, const Instance& instance) {
     // Calculate fitness based on bin loads
     for (int bin = 0; bin < instance.num_bins; ++bin) {
         int load = bin_counts[bin];
-        const auto& bounds = instance.bin_bounds[bin];
+        const auto &bounds = instance.bin_bounds[bin];
         int max_capacity = bounds.max_capacity;
         int min_capacity = bounds.min_capacity;
 
@@ -46,12 +49,14 @@ int evaluate_fitness(const Solution& sol, const Instance& instance) {
     return fitness;
 }
 
-
 // Initialize the population
 
-std::vector<Solution> initialize_population(int population_size, const Instance& instance, std::mt19937& rng) {
+std::vector<Solution> initialize_population(int population_size,
+                                            const Instance &instance,
+                                            std::mt19937 &rng) {
     std::vector<Solution> population;
-    population.reserve(population_size);  // Preallocate memory for the population
+    population.reserve(
+        population_size); // Preallocate memory for the population
 
     std::uniform_int_distribution<int> bin_dist(0, instance.num_bins - 1);
 
@@ -59,10 +64,12 @@ std::vector<Solution> initialize_population(int population_size, const Instance&
         Solution sol;
         sol.ball_assignments.resize(instance.num_balls);
         for (int b = 0; b < instance.num_balls; ++b) {
-            // If random is true, assign balls to random bins, otherwise use a heuristic
-            sol.ball_assignments[b] = random ? bin_dist(rng) : (b % instance.num_bins);
+            sol.ball_assignments[b] =
+                random ? bin_dist(rng) : (b % instance.num_bins);
         }
         sol.fitness = evaluate_fitness(sol, instance);
+        sol.first_solution =
+            (population.empty()) ? sol.fitness : population[0].first_solution;
         return sol;
     };
 
@@ -80,32 +87,37 @@ std::vector<Solution> initialize_population(int population_size, const Instance&
 }
 
 // Enhanced Selection operator (roulette wheel selection)
-Solution selection(const std::vector<Solution>& population, std::mt19937& rng) {
+Solution selection(const std::vector<Solution> &population, std::mt19937 &rng) {
     std::vector<double> cumulative_fitness(population.size());
     cumulative_fitness[0] = population[0].fitness;
     for (size_t i = 1; i < population.size(); ++i) {
-        cumulative_fitness[i] = cumulative_fitness[i - 1] + population[i].fitness;
+        cumulative_fitness[i] =
+            cumulative_fitness[i - 1] + population[i].fitness;
     }
 
     std::uniform_real_distribution<double> dist(0, cumulative_fitness.back());
     double random_value = dist(rng);
 
-    auto it = std::lower_bound(cumulative_fitness.begin(), cumulative_fitness.end(), random_value);
+    auto it = std::lower_bound(cumulative_fitness.begin(),
+                               cumulative_fitness.end(), random_value);
     return population[std::distance(cumulative_fitness.begin(), it)];
 }
 
 // Crossover operator (uniform crossover)
-Solution crossover(const Solution& parent1, const Solution& parent2, std::mt19937& rng) {
+Solution crossover(const Solution &parent1, const Solution &parent2,
+                   std::mt19937 &rng) {
     Solution offspring;
     offspring.ball_assignments.resize(parent1.ball_assignments.size());
 
     // Select two random crossover points
-    std::uniform_int_distribution<size_t> dist(0, parent1.ball_assignments.size() - 1);
+    std::uniform_int_distribution<size_t> dist(
+        0, parent1.ball_assignments.size() - 1);
     size_t point1 = dist(rng);
     size_t point2 = dist(rng);
 
     // Ensure point1 < point2
-    if (point1 > point2) std::swap(point1, point2);
+    if (point1 > point2)
+        std::swap(point1, point2);
 
     // Copy genes from parent1 and parent2
     for (size_t i = 0; i < parent1.ball_assignments.size(); ++i) {
@@ -120,7 +132,8 @@ Solution crossover(const Solution& parent1, const Solution& parent2, std::mt1993
 }
 
 // Adaptive Mutation operator
-void mutation(Solution& sol, const Instance& instance, std::mt19937& rng, double mutation_rate) {
+void mutation(Solution &sol, const Instance &instance, std::mt19937 &rng,
+              double mutation_rate) {
     std::uniform_int_distribution<int> ball_dist(0, instance.num_balls - 1);
     std::uniform_int_distribution<int> bin_dist(0, instance.num_bins - 1);
 
@@ -132,38 +145,43 @@ void mutation(Solution& sol, const Instance& instance, std::mt19937& rng, double
 }
 
 // Genetic algorithm main function
-Solution genetic_algorithm(const Instance& instance, unsigned int seed, unsigned int max_iterations, double time_limit) {
+Solution genetic_algorithm(const Instance &instance, unsigned int seed,
+                           unsigned int max_iterations, double time_limit) {
     std::mt19937 rng(seed);
     auto start_time = std::chrono::steady_clock::now();
 
-    const int population_size = 10;     
-    const double crossover_rate = 0.2;  
-    const int elite_size = 3;           
-    double mutation_rate = 0.1;         
+    const int population_size = 10;
+    const double crossover_rate = 0.2;
+    const int elite_size = 3;
+    double mutation_rate = 0.1;
 
     // Initialize population
     auto population = initialize_population(population_size, instance, rng);
+    Solution best_solution = population[0];
+    best_solution.first_solution = population[0].first_solution;
 
     // Evaluate fitness for all individuals
-    for (auto& sol : population) {
+    for (auto &sol : population) {
         sol.fitness = evaluate_fitness(sol, instance);
     }
 
     // Sort population by fitness (descending)
-    std::sort(population.begin(), population.end(), [](const Solution& a, const Solution& b) {
-        return a.fitness > b.fitness;
-    });
+    std::sort(population.begin(), population.end(),
+              [](const Solution &a, const Solution &b) {
+                  return a.fitness > b.fitness;
+              });
 
-    Solution best_solution = population[0];
     unsigned int iteration = 0;
 
     // Main loop of the genetic algorithm
     while (iteration < max_iterations) {
-       
+
         std::vector<Solution> new_population;
-        new_population.reserve(population_size); // Reserve space for new population
+        new_population.reserve(
+            population_size); // Reserve space for new population
         // Elitism: Keep the top 'elite_size' individuals
-        new_population.insert(new_population.end(), population.begin(), population.begin() + elite_size);
+        new_population.insert(new_population.end(), population.begin(),
+                              population.begin() + elite_size);
 
         // Generate new individuals via selection, crossover, and mutation
         while (new_population.size() < population_size) {
@@ -171,7 +189,8 @@ Solution genetic_algorithm(const Instance& instance, unsigned int seed, unsigned
             Solution parent2 = selection(population, rng);
 
             Solution offspring = parent1;
-            if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) < crossover_rate) {
+            if (std::uniform_real_distribution<double>(0.0, 1.0)(rng) <
+                crossover_rate) {
                 offspring = crossover(parent1, parent2, rng);
             }
 
@@ -200,23 +219,28 @@ Solution genetic_algorithm(const Instance& instance, unsigned int seed, unsigned
         if (population[0].fitness > best_solution.fitness) {
             best_solution = population[0];
             auto current_time = std::chrono::steady_clock::now();
-            double elapsed_time = std::chrono::duration<double>(current_time - start_time).count();
-            std::cout << std::fixed << std::setprecision(2)
-                      << elapsed_time << " " << best_solution.fitness <<
-                      " Iteration " << iteration << std::endl;
+            double elapsed_time =
+                std::chrono::duration<double>(current_time - start_time)
+                    .count();
+            std::cout << std::fixed << std::setprecision(2) << elapsed_time
+                      << " " << best_solution.fitness << " Iteration "
+                      << iteration << std::endl;
+            best_solution.iteration = iteration;
+            best_solution.elapsed_time =
+                std::chrono::duration<double>(std::chrono::steady_clock::now() -
+                                              start_time)
+                    .count();
         }
 
         ++iteration;
 
         // Check for time limit
         auto current_time = std::chrono::steady_clock::now();
-        if (std::chrono::duration<double>(current_time - start_time).count() >= time_limit) {
+        if (std::chrono::duration<double>(current_time - start_time).count() >=
+            time_limit) {
             break;
         }
     }
 
-    std::cout << "Best solution fitness: " << best_solution.fitness <<
-                " Iteration " << iteration << std::endl;
     return best_solution;
 }
-

@@ -14,5 +14,5 @@ struct Instance {
     std::vector<BinBounds> bin_bounds;
 };
 
-Instance read_instance(const std::string& filename);
-void print_instance(const Instance& instance);
+Instance read_instance(const std::string &filename);
+void print_instance(const Instance &instance);

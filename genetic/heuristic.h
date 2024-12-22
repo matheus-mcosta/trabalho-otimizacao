@@ -7,9 +7,13 @@
 // Define the Solution structure
 struct Solution {
     std::vector<int> ball_assignments; // ball_assignments[ball] = bin
-    int fitness; // Objective function value
+    int fitness;                       // Objective function value
+    int first_solution;                // First solution value
+    int iteration;                     // Iteration
+    double elapsed_time;               // Elapsed time
 };
 
 // Declaration of the genetic_algorithm function
-Solution genetic_algorithm(const Instance& instance, unsigned int seed, unsigned int max_iterations, double time_limit);
+Solution genetic_algorithm(const Instance &instance, unsigned int seed,
+                           unsigned int max_iterations, double time_limit);
 #endif // HEURISTIC_H

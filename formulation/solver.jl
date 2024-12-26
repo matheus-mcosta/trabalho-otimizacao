@@ -119,8 +119,8 @@ end
 
 # Execução principal
 if length(ARGS) < 3
-    println("Uso: julia balls_and_bins.jl <arquivo_entrada> <semente> <limite_tempo>")
-    println("Ou:  julia balls_and_bins.jl <arquivo_entrada> all <limite_tempo> (para executar sementes 1-10)")
+    println("Uso: julia solver.jl <arquivo_entrada> <semente> <limite_tempo>")
+    println("Ou:  julia solver.jl <arquivo_entrada> all <limite_tempo> (para executar sementes 1-10)")
     exit(1)
 end
 
